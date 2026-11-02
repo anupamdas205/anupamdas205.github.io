@@ -609,6 +609,14 @@ input:not([type=submit]):not([type=button]),textarea,select{cursor:auto}
 .oc-img .proof-btn{width:auto;height:auto;font-size:.72rem;padding:.3rem .8rem;white-space:nowrap}
 .oc-h{flex-wrap:wrap}@media(max-width:640px){.oc-dash{display:none}.oc-img{margin-left:0}}
 @media(min-width:641px) and (max-width:900px){.oc{--tc:7rem}.oc.oc-fit{--tc:fit-content(7rem)}}
+
+/* ===== v15: about me, news layout base ===== */
+.am-sub{font-family:var(--serif);font-size:1.05rem;font-weight:500;color:var(--ink-2);margin:0 0 .5rem}
+.am-desc{display:flex;flex-direction:column;gap:.6rem;font-size:.95rem;line-height:1.75;color:var(--ink-2)}
+.am-desc p{margin:0;white-space:pre-line}
+.news-t{flex:1 1 0}.news-i{min-width:0}
+.two-col .side-col>.sec{border:1px solid var(--line);border-radius:16px;margin-top:.8rem}
+#footer-v{font-size:.8rem;opacity:.85;margin:0}
 </style>
 </head>
 <body>
@@ -629,7 +637,7 @@ input:not([type=submit]):not([type=button]),textarea,select{cursor:auto}
 <div id="menu-backdrop" class="menu-backdrop"></div>
 <aside id="mobile-menu" class="mobile-menu" aria-label="Site menu"></aside>
 <main id="main"><div class="loading">Loading&hellip;</div></main>
-<footer id="footer" class="foot" hidden><div class="wrap"><div id="footer-l"></div><p id="footer-r"></p></div></footer>
+<footer id="footer" class="foot" hidden><div class="wrap"><div id="footer-l"></div><p id="footer-r"></p><p id="footer-v" hidden></p></div></footer>
 <div id="lb" class="lb" hidden role="dialog" aria-modal="true" aria-label="Image viewer">
   <div class="lb-box">
     <button id="lb-close" class="lb-b lb-x" data-act="lbclose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
@@ -682,9 +690,10 @@ function siteText(k, f = '') {
 }
 
 /* ---------------- section registry ---------------- */
-const BASE_ORDER = ['about', 'metrics', 'researchFocus', 'focusKeywords', 'education', 'skills', 'publications', 'awards', 'experience', 'extracurricular', 'gallery', 'references', 'recommendations', 'contact'];
+const BASE_ORDER = ['about', 'aboutMe', 'metrics', 'researchFocus', 'focusKeywords', 'education', 'skills', 'publications', 'awards', 'experience', 'extracurricular', 'gallery', 'references', 'recommendations', 'contact'];
 const BASE_META = {
   about:         { dom: 'about' },
+  aboutMe:       { dom: 'about-me', acc: 'blue', icon: 'fa-user', eyebrow: '', title: '' },
   metrics:       { dom: 'metrics' },
   researchFocus: { dom: 'research-focus', acc: 'violet',  icon: 'fa-compass',       eyebrow: 'researchDirection', title: 'researchFocus' },
   focusKeywords: { dom: 'focus-keywords', acc: 'violet',  icon: 'fa-tags',          eyebrow: 'focusKeywordsEyebrow', title: 'focusKeywordsTitle', nav: 'navFocusKeywords' },
@@ -700,12 +709,13 @@ const BASE_META = {
   contact:       { dom: 'contact',        acc: 'blue',    icon: 'fa-paper-plane',   eyebrow: 'getInTouch',         title: 'contactTitle', nav: 'navContact' }
 };
 BASE_META.about.nav = 'navAbout';
-const COPY_TYPES = ['about', 'metrics', 'researchFocus', 'focusKeywords', 'education', 'skills', 'publications', 'awards', 'experience', 'extracurricular', 'gallery', 'references', 'recommendations'];
+const COPY_TYPES = ['about', 'aboutMe', 'metrics', 'researchFocus', 'focusKeywords', 'education', 'skills', 'publications', 'awards', 'experience', 'extracurricular', 'gallery', 'references', 'recommendations'];
 
 function baseData(type) {
   const p = appData.profile;
   switch (type) {
     case 'about': return p;
+    case 'aboutMe': return appData.aboutMe;
     case 'metrics': return { items: appData.metrics };
     case 'researchFocus': return { interests: p.researchInterests, philosophy: p.researchPhilosophy, current: p.currentResearch, news: appData.news };
     case 'focusKeywords': return { tags: p.focusTags, kw: p.hero && p.hero.kw };
@@ -727,6 +737,7 @@ function fixData(type, d) {
   const a = v => Array.isArray(v) ? v.filter(x => x && typeof x === 'object') : [];
   switch (type) {
     case 'about': d.focusTags = a(d.focusTags); d.socialLinks = a(d.socialLinks); break;
+    case 'aboutMe': d.title = String(d.title || ''); d.subtitle = String(d.subtitle || ''); d.description = String(d.description || ''); break;
     case 'metrics': case 'education': case 'awards': case 'references': case 'extracurricular': case 'recommendations': d.items = a(d.items); break;
     case 'focusKeywords': d.tags = a(d.tags); d.kw = (d.kw && typeof d.kw === 'object') ? d.kw : {}; break;
     case 'experience': d.items = a(d.items); d.items.forEach(e => e.bullets = Array.isArray(e.bullets) ? e.bullets : []); break;
@@ -749,6 +760,8 @@ function normalize(json) {
   d.galleryAlbums = (Array.isArray(d.galleryAlbums) ? d.galleryAlbums : []).map(String); if (!d.galleryAlbums.includes('All Photos')) d.galleryAlbums.unshift('All Photos');
   d.skills = obj(d.skills); ['category1', 'category2'].forEach(k => { d.skills[k] = obj(d.skills[k]); d.skills[k].bullets = Array.isArray(d.skills[k].bullets) ? d.skills[k].bullets : []; });
   d.sectionVisibility = obj(d.sectionVisibility); d.sectionOrder = (Array.isArray(d.sectionOrder) ? d.sectionOrder : []).map(String);
+  d.aboutMe = obj(d.aboutMe); d.analytics = obj(d.analytics); d.globalStyles = obj(d.globalStyles);
+  if (!d.sectionOrder.includes('aboutMe')) { const ai = d.sectionOrder.indexOf('about'); d.sectionOrder.splice(ai + 1, 0, 'aboutMe'); }
   d.siteText = obj(d.siteText); d.typography = obj(d.typography); d.layout = obj(d.layout); d.sectionSettings = obj(d.sectionSettings); d.pageBg = obj(d.pageBg);
   d.sectionCopies = d.sectionCopies.filter(c => COPY_TYPES.includes(c.type) && has(c.id));
   d.sectionCopies.forEach(c => { c.data = fixData(c.type, obj(c.data)); });
@@ -817,10 +830,10 @@ const sub = (k, c) => c.base ? ` data-sub="${k}"` : '';
 const h3 = (icon, text) => has(text) ? `<h3 class="rf-h">${icon ? `<i class="fa-solid ${icon}"></i>` : ''}<span>${esc(text)}</span></h3>` : '';
 
 const STYLE_GROUPS = {"txt": ["font", "size", "weight", "color", "align", "lineHeight", "margin", "padding", "opacity"], "box": ["bg", "border", "radius", "shadow", "padding", "margin", "opacity"], "both": ["font", "size", "weight", "color", "align", "lineHeight", "bg", "border", "radius", "shadow", "padding", "margin", "opacity"], "gap": ["gap", "margin", "padding", "align"], "sq": ["width", "height", "radius", "border", "shadow", "margin", "opacity"]};
-const STYLE_TARGETS = {"eyebrow": ["Eyebrow (small heading)", ".sec-eyebrow", "txt"], "title": ["Section title", ".sec-head h2", "txt"], "head": ["Header area", ".sec-head", "box"], "number": ["Section number", ".sec-num", "txt"], "itemTitle": ["Item titles", ".sec-body h3:not(.rf-h), .sec-body h4", "txt"], "body": ["Body text", ".sec-body .rf-p, .sec-body .edu-desc, .sec-body .aw-d, .sec-body .pub-au, .sec-body .ref-d, .sec-body .rich, .sec-body .shot-b p, .sec-body .news-t, .sec-body .bul", "txt"], "chips": ["Chips / tags", ".sec-body .chip", "both"], "cards": ["Cards", ".sec-body .card, .sec-body .pub", "box"], "subsections": ["Sub-section containers", ".sec-body > *:not(.more)", "box"], "rfHead": ["Sub-section headings", ".rf-h", "txt"], "eduInst": ["Institution line", ".edu-inst", "txt"], "chip": ["Skill chips", ".kchip", "both"], "chipWrap": ["Skill chip area", ".chipwrap", "gap"], "catTitle": ["Category title", ".skill-h h3", "txt"], "catSub": ["Category subtitle", ".skill-h p", "txt"], "catIcon": ["Category icon box", ".skill-h .sec-icon", "sq", 1], "pubTitle": ["Manuscript title", ".pub h3", "txt"], "pubAuthors": ["Authors", ".pub-au", "txt"], "pubJournal": ["Journal", ".pub-j", "txt"], "pubYear": ["Year", ".pub-y b", "txt"], "pubSearch": ["Search box", ".pub-search", "box"], "filters": ["Filter buttons", ".fbtn", "both"], "cert": ["Certificate button", ".cert", "both"], "shotCard": ["Photo card", ".shot", "box"], "shotTitle": ["Photo title", ".shot-b h4", "txt"], "shotCaption": ["Photo caption", ".shot-b p", "txt"], "refCard": ["Reference card", ".ref", "box"], "refPhoto": ["Recommender photo", ".ref-av", "sq", 1], "refName": ["Name", ".ref h3", "txt"], "refTitle": ["Position", ".ref-t", "txt"], "refDept": ["Department / address", ".ref-d", "txt"], "refEmail": ["Email", ".ref-f a.mail", "txt"], "refBadge": ["Badge", ".ref-f .chip", "both"], "metricBox": ["Metrics strip", ".metrics", "box"], "metric": ["Each metric", ".metric", "box"], "metricNum": ["Metric number", ".metric b", "txt"], "metricLabel": ["Metric label", ".metric span", "txt"], "fkChips": ["Keyword chips", ".sec-body .tag", "both"]};
-const HERO_TARGETS = {"photo": ["Profile photo", ".hero-av", "sq", 1], "name": ["Name", ".hero h1", "txt"], "position": ["Position", ".hero-pos", "txt"], "institution": ["Institution", ".hero-inst", "txt"], "address": ["Address", ".hero-addr", "txt"], "tagline": ["Tagline pill", ".hero .pill-tag", "both"], "badge": ["Credentials pill", ".hero .pill-badge", "both"], "bio": ["Biography", ".hero-bio", "txt"], "socials": ["Social links row", ".socials", "gap"], "socialLinks": ["Social link chips", ".soc", "both"], "spacing": ["Vertical spacing between elements", ".hero-main, .hero-ident, .hero-rest", "gap"], "kw": ["Keyword chips", ".hero-kw .tag", "both"], "kwWrap": ["Keywords strip", ".hero-kw", "gap"], "cv": ["CV button (header)", "#cv-btn, #mobile-menu .btn", "both", 0, 1]};
-const TYPE_EXTRA = {"common": ["eyebrow", "title", "head", "number", "itemTitle", "body", "chips", "cards", "subsections"], "researchFocus": ["rfHead"], "education": ["eduInst"], "skills": ["chip", "chipWrap", "catTitle", "catSub", "catIcon"], "publications": ["pubTitle", "pubAuthors", "pubJournal", "pubYear", "pubSearch", "filters"], "awards": ["cert"], "experience": ["cert"], "gallery": ["shotCard", "shotTitle", "shotCaption"], "references": ["refCard", "refPhoto", "refName", "refTitle", "refDept", "refEmail", "refBadge"], "metrics": ["metricBox", "metric", "metricNum", "metricLabel"], "focusKeywords": ["fkChips"], "extracurricular": ["eduInst"], "text": []};
-
+const STYLE_TARGETS = {"eyebrow": ["Eyebrow (small heading)", ".sec-eyebrow", "txt"], "title": ["Section title", ".sec-head h2", "txt"], "head": ["Header area", ".sec-head", "box"], "number": ["Section number", ".sec-num", "txt"], "itemTitle": ["Item titles", ".sec-body h3:not(.rf-h), .sec-body h4", "txt"], "body": ["Body text", ".sec-body .rf-p, .sec-body .edu-desc, .sec-body .aw-d, .sec-body .pub-au, .sec-body .ref-d, .sec-body .rich, .sec-body .shot-b p, .sec-body .news-t, .sec-body .bul", "txt"], "chips": ["Chips / tags", ".sec-body .chip", "both"], "cards": ["Cards", ".sec-body .card, .sec-body .pub", "box"], "subsections": ["Sub-section containers", ".sec-body > *:not(.more)", "box"], "rfHead": ["Sub-section headings", ".rf-h", "txt"], "eduInst": ["Institution line", ".edu-inst", "txt"], "chip": ["Skill chips", ".kchip", "both"], "chipWrap": ["Skill chip area", ".chipwrap", "gap"], "catTitle": ["Category title", ".skill-h h3", "txt"], "catSub": ["Category subtitle", ".skill-h p", "txt"], "catIcon": ["Category icon box", ".skill-h .sec-icon", "sq", 1], "pubTitle": ["Manuscript title", ".pub h3", "txt"], "pubAuthors": ["Authors", ".pub-au", "txt"], "pubJournal": ["Journal", ".pub-j", "txt"], "pubYear": ["Year", ".pub-y b", "txt"], "pubSearch": ["Search box", ".pub-search", "box"], "filters": ["Filter buttons", ".fbtn", "both"], "cert": ["Certificate button", ".cert", "both"], "shotCard": ["Photo card", ".shot", "box"], "shotTitle": ["Photo title", ".shot-b h4", "txt"], "shotCaption": ["Photo caption", ".shot-b p", "txt"], "refCard": ["Reference card", ".ref", "box"], "refPhoto": ["Recommender photo", ".ref-av", "sq", 1], "refName": ["Name", ".ref h3", "txt"], "refTitle": ["Position", ".ref-t", "txt"], "refDept": ["Department / address", ".ref-d", "txt"], "refEmail": ["Email", ".ref-f a.mail", "txt"], "refBadge": ["Badge", ".ref-f .chip", "both"], "metricBox": ["Metrics strip", ".metrics", "box"], "metric": ["Each metric", ".metric", "box"], "metricNum": ["Metric number", ".metric b", "txt"], "metricLabel": ["Metric label", ".metric span", "txt"], "fkChips": ["Keyword chips", ".sec-body .tag", "both"], "eduDegree": ["Degree title", ".etl-b h3", "txt"], "eduDesc": ["Description", ".etl-b .edu-desc", "txt"], "eduTime": ["Year / period", ".etl-y", "txt"], "eduCgpa": ["CGPA chip", ".etl-b .edu-top .chip", "both"], "ocCard": ["Organisation card", ".oc", "box"], "ocName": ["Organisation name", ".oc-h h3", "txt"], "ocBadge": ["Badge (e.g. Current appointment)", ".oc-h .chip", "both"], "ocRole": ["Role / position", ".oc-b .exp-pos-name", "txt"], "ocTime": ["Time / dates", ".oc-t", "txt"], "ocDesc": ["Role details", ".oc-b .aw-d", "txt"], "ocMore": ["'more' / 'less' link", ".oc .aw-more", "txt"], "ocBtn": ["Images / certificate button", ".oc-img .cert, .oc .cert-row .cert", "both"], "awTitle": ["Award title", ".aw h3", "txt"], "awOrg": ["Awarding organisation", ".aw-org", "txt"], "awPeriod": ["Date / period chip", ".aw-body > div:first-child .chip", "both"], "awMeta": ["Meta chip", ".aw-body .chip.line", "both"], "awDetail": ["Details text", ".aw .aw-d", "txt"], "awMore": ["'more' / 'less' link", ".aw .aw-more", "txt"], "awIcon": ["Award icon box", ".aw-ic", "box"], "skillBullet": ["Bullet text", ".bul li span", "txt"], "skillLead": ["Bullet lead word (bold part)", ".bul b", "txt"], "skillBulletIcon": ["Bullet icon", ".bul li i", "txt"], "pubMeta": ["Status / DOI chips", ".pub-meta .chip", "both"], "rfText": ["Paragraph text", ".rf-p", "txt"], "newsDate": ["Update date", ".news-d", "txt"], "newsText": ["Update text", ".news-t", "txt"], "shotTag": ["Photo tag chip", ".shot-b .chip", "both"], "albumBtn": ["Album buttons", ".fbtn", "both"], "recCard": ["Recommendation card", ".rec-card", "box"], "recQuote": ["Recommendation text", ".rec-quote p", "txt"], "recName": ["Recommender name", ".rec-person", "txt"], "recDesig": ["Designation", ".rec-desig", "txt"], "recOrg": ["Organisation", ".rec-org", "txt"], "contactCard": ["Contact card", ".contact-card", "box"], "contactIntro": ["Contact intro text", ".contact-card .rf-p", "txt"], "contactBtn": ["Send button", ".contact-btn", "both"], "contactField": ["Form fields", ".contact-form input, .contact-form textarea", "both"], "amSub": ["Subtitle", ".am-sub", "txt"], "amDesc": ["Description text", ".am-desc p", "txt"]};
+const GLOBAL_TARGETS = {"brandName": ["Header name", ".brand-name", "txt"], "brandSub": ["Header subtitle", ".brand-sub", "txt"], "drawerLink": ["Menu drawer links", "#mobile-menu a", "txt"], "footerName": ["Footer name", "#footer-l b", "txt"], "footerSub": ["Footer subtitle", "#footer-l span", "txt"], "footerRights": ["Footer copyright", "#footer-r", "txt"], "footerVisitors": ["Footer visitor count", "#footer-v", "txt"]};
+const HERO_TARGETS = {"photo": ["Profile photo", ".hero-av", "sq", 1], "name": ["Name", ".hero-main h1", "txt"], "position": ["Position", ".hero-pos", "txt"], "institution": ["Institution", ".hero-inst", "txt"], "address": ["Address", ".hero-addr", "txt"], "tagline": ["Tagline pill", ".hero-main .pill-tag", "both"], "badge": ["Credentials pill", ".hero-main .pill-badge", "both"], "bio": ["Biography", ".hero-bio", "txt"], "socials": ["Social links row", ".socials", "gap"], "socialLinks": ["Social link chips", ".soc", "both"], "spacing": ["Vertical spacing between elements", ".hero-main, .hero-ident, .hero-rest", "gap"], "kw": ["Keyword chips", ".hero-kw .tag", "both"], "kwWrap": ["Keywords strip", ".hero-kw", "gap"], "cv": ["CV button (header)", "#cv-btn, #mobile-menu .btn", "both", 0, 1]};
+const TYPE_EXTRA = {"common": ["eyebrow", "title", "head", "number", "itemTitle", "body", "chips", "cards", "subsections"], "researchFocus": ["rfHead", "rfText", "newsDate", "newsText"], "education": ["eduDegree", "eduInst", "eduDesc", "eduTime", "eduCgpa"], "skills": ["chip", "chipWrap", "catTitle", "catSub", "catIcon", "skillBullet", "skillLead", "skillBulletIcon"], "publications": ["pubTitle", "pubAuthors", "pubJournal", "pubYear", "pubMeta", "pubSearch", "filters"], "awards": ["awTitle", "awOrg", "awPeriod", "awMeta", "awDetail", "awMore", "awIcon", "cert"], "experience": ["ocCard", "ocName", "ocBadge", "ocRole", "ocTime", "ocDesc", "ocMore", "ocBtn", "cert"], "gallery": ["shotCard", "shotTitle", "shotCaption", "shotTag", "albumBtn"], "references": ["refCard", "refPhoto", "refName", "refTitle", "refDept", "refEmail", "refBadge"], "metrics": ["metricBox", "metric", "metricNum", "metricLabel"], "focusKeywords": ["fkChips"], "extracurricular": ["ocCard", "ocName", "ocBadge", "ocRole", "ocTime", "ocDesc", "ocMore", "ocBtn"], "text": [], "recommendations": ["recCard", "recQuote", "recName", "recDesig", "recOrg"], "contact": ["contactCard", "contactIntro", "contactBtn", "contactField"], "aboutMe": ["amSub", "amDesc"]};
 /* ---------------- Desktop / Mobile values and the shared style engine ---------------- */
 const dmv = v => (v && typeof v === 'object') ? { d: t(v.desktop), m: t(v.mobile) } : { d: t(v), m: '' };
 const unit = v => { v = t(v); if (/^-?\d+(\.\d+)?$/.test(v)) return v + 'px'; return /^-?[\d.]+(px|rem|em|%|vw|vh)$/.test(v) ? v : ''; };
@@ -862,6 +875,15 @@ function applyStyles(list) {
     const prefix = `[data-sec="${String(s.id).replace(/["\\]/g, '')}"]`, isHero = s.type === 'about';
     const styles = isHero ? ((s.data.hero || {}).styles) : secCfg(s.id).styles, defs = isHero ? HERO_TARGETS : STYLE_TARGETS;
     Object.entries(styles || {}).forEach(([k, props]) => { const def = defs[k]; if (!def || (def[4] && !s.base)) return; const r = targetCss(prefix, def, props); d += r.d; m += r.m; });
+    if (!isHero && s.type === 'researchFocus') { const nc = secCfg(s.id).news || {}, W = { narrow: '4.2rem', medium: '6.2rem', wide: '9rem', auto: 'auto' };
+      const nd = k => { const x = dmv(nc[k]); return [x.d, x.m]; };
+      [0, 1].forEach(i => { const pos = nd('datePos')[i], w = nd('dateW')[i], da = nd('dateAlign')[i], ta = nd('textAlign')[i], gp = nd('rowGap')[i]; let c = '';
+        if (pos === 'right') c += `${prefix} .news-i{flex-direction:row-reverse}${prefix} .news-d{text-align:right}`; else if (pos === 'top') c += `${prefix} .news-i{flex-direction:column;gap:.1rem}${prefix} .news-d{flex:none}`; else if (pos === 'hidden') c += `${prefix} .news-d{display:none}`; else if (pos === 'left') c += `${prefix} .news-i{flex-direction:row}`;
+        if (W[w]) c += `${prefix} .news-d{flex:0 0 ${W[w]}}`;
+        if (['left', 'center', 'right'].includes(da)) c += `${prefix} .news-d{text-align:${da}}`;
+        if (['left', 'center', 'right', 'justify'].includes(ta)) c += `${prefix} .news-t{text-align:${ta}}`;
+        if (nz(gp) > 0) c += `${prefix} .news-grp{gap:${nz(gp)}px}`;
+        if (c) { if (i) m += c; else d += c; } }); }
     if (!isHero) { const cs = secCfg(s.id), tc = cssColor(cs.textColor), cb = cssColor(cs.cardBg), ac = cssColor(cs.accentColor), hc = cssColor(cs.titleColor);
       if (hc) d += `${prefix} .sec-head h2{color:${hc}}`;
       if (tc) d += `${prefix}{--ink:${tc};--ink-2:${tc};--muted:color-mix(in srgb,${tc} 78%,transparent);color:${tc}}`;
@@ -869,6 +891,7 @@ function applyStyles(list) {
       if (cb) d += `${prefix} .card,${prefix} .pub,${prefix} .oc{background:${cb};${toneVars(cb)}}`; }
     if (isHero) { const sh = dmv((s.data.hero || {}).photoShape); if (SHAPE_R[sh.d]) d += `${prefix} .hero-av{border-radius:${SHAPE_R[sh.d]}}`; if (SHAPE_R[sh.m]) m += `${prefix} .hero-av{border-radius:${SHAPE_R[sh.m]}}`; }
   });
+  Object.entries(appData.globalStyles || {}).forEach(([k, props]) => { const def = GLOBAL_TARGETS[k]; if (!def) return; const r = targetCss('', def, props); d += r.d; m += r.m; });
   let el = $('#dyn-styles'); if (!el) { el = document.createElement('style'); el.id = 'dyn-styles'; document.body.appendChild(el); }
   el.textContent = d + (m ? `@media(max-width:640px){${m}}` : '');
 }
@@ -1487,7 +1510,12 @@ function initRecCarousels() {
     el.addEventListener('focusin', stop); el.addEventListener('focusout', start);
   });
 }
-const BUILDERS = { researchFocus: researchBuild, focusKeywords: focusKeywordsBuild, extracurricular: xcaBuild, education: eduBuild, skills: skillsBuild, publications: pubBuild, awards: awardsBuild, experience: expBuild, gallery: galleryBuild, references: refsBuild, recommendations: recommendationsBuild, contact: contactBuild, text: textBuild };
+function aboutMeBuild(d) {
+  const sub = t(d.subtitle), desc = t(d.description); if (!sub && !desc) return { body: '', tools: '' };
+  const paras = desc.split(/\n{2,}/).map(x => x.trim()).filter(Boolean).map(x => `<p>${esc(x)}</p>`).join('');
+  return { body: `<div class="am">${sub ? `<p class="am-sub">${esc(sub)}</p>` : ''}${paras ? `<div class="am-desc">${paras}</div>` : ''}</div>`, tools: '' };
+}
+const BUILDERS = { aboutMe: aboutMeBuild, researchFocus: researchBuild, focusKeywords: focusKeywordsBuild, extracurricular: xcaBuild, education: eduBuild, skills: skillsBuild, publications: pubBuild, awards: awardsBuild, experience: expBuild, gallery: galleryBuild, references: refsBuild, recommendations: recommendationsBuild, contact: contactBuild, text: textBuild };
 
 function sectionList() {
   const copies = Object.fromEntries(appData.sectionCopies.map(c => [c.id, c])), custom = Object.fromEntries(appData.customSections.map(c => [c.id, c]));
@@ -1502,11 +1530,13 @@ function sectionList() {
   return out;
 }
 function headMeta(s) {
+  if (s.base && s.type === 'aboutMe') return { eyebrow: '', title: t(appData.aboutMe.title), acc: 'blue', icon: 'fa-user' };
   if (s.base) { const m = BASE_META[s.type]; return { eyebrow: siteText(m.eyebrow, ''), title: siteText(m.title, ''), acc: m.acc, icon: m.icon }; }
   if (s.type === 'text') return { eyebrow: t(s.copy.eyebrow), title: t(s.copy.title), acc: 'blue', icon: 'fa-align-left' };
   const m = BASE_META[s.type]; return { eyebrow: t(s.copy.eyebrow), title: t(s.copy.title), acc: m.acc, icon: m.icon };
 }
 function navLabelFor(s) {
+  if (s.base && s.type === 'aboutMe') return t(appData.aboutMe.title);
   if (s.base) { const k = BASE_META[s.type].nav; return k ? t(siteText(k)) : ''; }
   if (s.copy.showInNav === false) return '';
   return t(s.copy.navLabel) || t(s.copy.title);
@@ -1549,7 +1579,7 @@ function renderAll() {
   $('#main').innerHTML = parts.map(x => x.html).join('');
   { const mn = $('#main'), hero = $('#main > .hero'); mn.classList.remove('two-col');
     if (L.twoCol !== false && hero) { const side = document.createElement('div'), mc = document.createElement('div'); side.className = 'side-col'; mc.className = 'main-col';
-      Array.from(mn.children).forEach(k => (k === hero ? side : mc).appendChild(k)); mn.append(side, mc); mn.classList.add('two-col'); const cl = Math.min(40, Math.max(15, nz(L.colLeft, 30))); mn.style.setProperty('--cols', `minmax(13rem,${cl}fr) minmax(0,${100 - cl}fr)`); } }
+      Array.from(mn.children).forEach(k => ((k === hero || (appData.aboutMe.left === true && k.getAttribute('data-sec') === 'aboutMe')) ? side : mc).appendChild(k)); mn.append(side, mc); mn.classList.add('two-col'); const cl = Math.min(40, Math.max(15, nz(L.colLeft, 30))); mn.style.setProperty('--cols', `minmax(13rem,${cl}fr) minmax(0,${100 - cl}fr)`); } }
   renderChrome(p, nav);
   applyTypography();
   applyStyles(list.filter(x => vis[x.id] !== false)); applyPageBg(); applyNavStyles(); initCountUp(); initRecCarousels();
@@ -1580,6 +1610,11 @@ function fitNav() {
 }
 document.addEventListener('click', e => { const m = $('.nav-more'); if (m && !e.target.closest('.nav-more-btn')) m.hidden = true; });
 window.addEventListener('resize', () => { clearTimeout(fitNav.t); fitNav.t = setTimeout(fitNav, 120); });
+function initAnalytics() {
+  const a = appData.analytics || {}, name = t(a.goatcounter).replace(/[^a-z0-9-]/gi, ''); if (!name) return;
+  if (!window.__gc) { window.__gc = 1; const sc = document.createElement('script'); sc.async = true; sc.src = '//gc.zgo.at/count.js'; sc.setAttribute('data-goatcounter', `https://${name}.goatcounter.com/count`); document.body.appendChild(sc); }
+  const fv = $('#footer-v'); if (a.showCount === true && fv) { fetch(`https://${name}.goatcounter.com/counter/TOTAL.json`).then(r => r.ok ? r.json() : null).then(j => { if (j && j.count) { fv.textContent = `Visitors: ${j.count}`; fv.hidden = false; $('#footer').hidden = false; } }).catch(() => {}); }
+}
 function renderChrome(p, nav) {
   const name = t(p.name), sub = t(p.headerTitle) || t(siteText('navTitle')), av = t(p.avatarUrl);
   $('#brand-av').hidden = !av; if (av) { $('#brand-av img').src = av; $('#brand-av img').alt = name || 'Profile'; }
@@ -1697,7 +1732,7 @@ document.addEventListener('submit', e => {
 window.addEventListener('load', () => {
   fetch('data.json?t=' + Date.now())
     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(json => { appData = normalize(json); renderAll(); })
+    .then(json => { appData = normalize(json); renderAll(); initAnalytics(); })
     .catch(err => {
       console.error('Could not load site content:', err);
       $('#main').innerHTML = '<div class="loading" style="text-align:center;padding:2rem"><div>Could not load <b>data.json</b>.<br><span style="font-weight:400">If you opened this file directly from disk, run it through a local web server instead &mdash; browsers block fetch() on file:// pages.</span></div></div>';
